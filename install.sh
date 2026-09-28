@@ -9,12 +9,24 @@ APP="$ROOT/build/Underdock.app"
 [ -d "$APP" ] || { echo "Manca $APP — esegui prima ./build.sh"; exit 1; }
 
 echo "→ chiudo le versioni in esecuzione"
-osascript -e 'quit app "DockClock"' 2>/dev/null || true
-osascript -e 'quit app "DockNowPlaying"' 2>/dev/null || true
-osascript -e 'quit app "Underdock"' 2>/dev/null || true
-# E la versione di prima, che si chiamava Dock Widgets.
-osascript -e 'quit app "Dock Widgets"' 2>/dev/null || true
-osascript -e 'quit app "WidgetPro"' 2>/dev/null || true
+# Solo quelle che stanno davvero girando: chiedere ad AppleScript di chiudere
+# un'applicazione che non c'è più non dà errore — va a cercarla, e resta lì ad
+# aspettare che qualcuno gliela indichi. I nomi vecchi sono quelli che questo
+# progetto ha portato prima di chiamarsi Underdock.
+quit_if_running() {
+  pgrep -x "$1" >/dev/null 2>&1 || return 0
+  osascript -e "quit app \"$1\"" 2>/dev/null || true
+  # Chi non se ne va da solo entro qualche secondo va convinto.
+  for _ in 1 2 3 4 5 6; do
+    pgrep -x "$1" >/dev/null 2>&1 || return 0
+    sleep 0.5
+  done
+  pkill -x "$1" 2>/dev/null || true
+}
+
+for name in DockClock DockNowPlaying Underdock "Dock Widgets" WidgetPro; do
+  quit_if_running "$name"
+done
 # The overlay agent must go too, or the freshly installed one sees a duplicate
 # of itself and quits.
 pkill -f "NowPlayingBar.app/Contents/MacOS/NowPlayingBar" 2>/dev/null || true
