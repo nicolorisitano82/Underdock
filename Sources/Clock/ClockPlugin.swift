@@ -9,13 +9,24 @@ final class ClockDockTilePlugin: TilePlugin {
         ClockTileView(frame: NSRect(x: 0, y: 0, width: 128, height: 128))
     }
 
-    /// One tick a second, but a redraw only when the face would actually change:
-    /// with seconds off, that is once a minute.
-    override var tickInterval: TimeInterval { 1 }
+    /// A hand that sweeps is redrawn fifteen times a second; everything else
+    /// once, and even then only if the face would look different — with the
+    /// seconds off, that is once a minute.
+    ///
+    /// Fifteen because the drawing costs 1.4 ms a frame, measured: twenty
+    /// milliseconds of work a second, in a process the Dock shares with every
+    /// other third-party extra. Sixty would look no better on a tile this size
+    /// and would cost four times as much.
+    static let sweepRate: TimeInterval = 1.0 / 15
+
+    override var tickInterval: TimeInterval {
+        let settings = ClockSettings.current(instanceID)
+        return settings.showsSeconds && settings.style.sweeps ? Self.sweepRate : 1
+    }
 
     override func tick() {
         guard let clockView else { return }
-        let token = clockView.renderToken()
+        let token = clockView.renderToken(every: tickInterval)
         guard token != lastToken else { return }
         lastToken = token
         refresh()

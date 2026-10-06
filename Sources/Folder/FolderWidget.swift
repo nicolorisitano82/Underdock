@@ -335,6 +335,9 @@ final class FolderTileView: TileView {
 
     override func reloadSettings() {
         settings = FolderSettings.current(resolvedInstance("folder"))
+        // The composed icon is kept between frames; a change of settings is
+        // the moment it stops being the right one.
+        FolderIconRenderer.forget()
         accent = settings.accent
         subscribe()
         monitor.watch(settings.path)
@@ -347,9 +350,6 @@ final class FolderTileView: TileView {
 
     override func draw(_ dirtyRect: NSRect) {
         let card = TileGeometry.artworkRect(in: bounds)
-        Diagnostics.once("folder-tile-size",
-                         "tile cartella disegnata a \(Int(bounds.width))x\(Int(bounds.height)) "
-                            + "punti, scala \(window?.backingScaleFactor ?? 0)")
         let side = card.width
         let palette = self.palette
 
@@ -380,8 +380,7 @@ final class FolderTileView: TileView {
             let box = NSRect(x: card.midX - size / 2 + CGFloat(index) * size * 0.42,
                              y: card.maxY - size * (0.92 + CGFloat(index) * 0.10),
                              width: size, height: size)
-            let preview = NSWorkspace.shared.icon(forFile: item.path)
-            preview.size = box.size
+            let preview = FolderIconRenderer.fileIcon(for: item.path, side: box.width)
             preview.draw(in: box, from: .zero, operation: .sourceOver,
                       fraction: index == 0 ? 1 : 0.75, respectFlipped: true, hints: nil)
         }

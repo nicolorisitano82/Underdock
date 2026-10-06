@@ -46,8 +46,14 @@ final class ClockTileView: TileView {
 
     /// What the tile currently shows, so the plug-in can skip redraws that would
     /// paint the same pixels.
-    func renderToken(at date: Date = Date()) -> Int {
-        let unit: TimeInterval = settings.showsSeconds ? 1 : 60
+    /// What makes this frame different from the last one.
+    ///
+    /// `every` is how finely the caller intends to look: a sweeping hand asks
+    /// fifteen times a second and wants a different answer each time, while a
+    /// face without seconds changes once a minute and should say so, so that
+    /// the redraw — and the trip across to the Dock — can be skipped.
+    func renderToken(at date: Date = Date(), every interval: TimeInterval = 1) -> Int {
+        let unit: TimeInterval = settings.showsSeconds ? max(interval, 0.01) : 60
         return Int(date.timeIntervalSince1970 / unit)
     }
 

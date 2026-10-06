@@ -16,9 +16,14 @@ struct ClockFaceContext {
     var side: CGFloat { card.width }
     var centre: NSPoint { NSPoint(x: card.midX, y: card.midY) }
 
+    /// The seconds carry their fraction, so a hand drawn from them sweeps
+    /// instead of stepping. At one redraw a second the fraction is always
+    /// about zero and nothing changes; it is what makes a faster tick worth
+    /// asking for.
     var parts: (hours: CGFloat, minutes: CGFloat, seconds: CGFloat) {
         let components = calendar.dateComponents([.hour, .minute, .second], from: date)
-        let seconds = CGFloat(components.second ?? 0)
+        let fraction = CGFloat(date.timeIntervalSince1970.truncatingRemainder(dividingBy: 1))
+        let seconds = CGFloat(components.second ?? 0) + fraction
         let minutes = CGFloat(components.minute ?? 0) + seconds / 60
         let hours = CGFloat((components.hour ?? 0) % 12) + minutes / 60
         return (hours, minutes, seconds)

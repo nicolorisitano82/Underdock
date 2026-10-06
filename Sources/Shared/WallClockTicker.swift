@@ -8,7 +8,11 @@ final class WallClockTicker {
     private let handler: () -> Void
 
     init(interval: TimeInterval, handler: @escaping () -> Void) {
-        self.interval = max(interval, 0.1)
+        // A tenth of a second was the floor while every tick meant a second
+        // being shown; a hand that sweeps asks for fifteen a second. The floor
+        // stays, further down, so a mistake somewhere cannot ask for a timer
+        // faster than the screen.
+        self.interval = max(interval, 1.0 / 60)
         self.handler = handler
     }
 

@@ -18,6 +18,12 @@ struct ClockSettings: Equatable {
             }
         }
 
+        /// Whether anything on this face moves between one second and the
+        /// next. Only these are worth redrawing faster: a digital face with
+        /// the seconds showing changes once a second however often it is
+        /// asked, and the rest change once a minute.
+        var sweeps: Bool { self == .analog || self == .rings }
+
         var face: ClockFace {
             switch self {
             case .analog: return AnalogFace()

@@ -17,6 +17,9 @@ class TilePlugin: NSObject, NSDockTilePlugIn {
     private(set) var tileView: TileView?
 
     private var ticker: WallClockTicker?
+    /// The pace the running ticker was built with, so a settings change can
+    /// tell whether it still fits.
+    private var tickedAt: TimeInterval = -1
     private var settingsObserver: NSObjectProtocol?
 
     // MARK: Subclass hooks
@@ -82,23 +85,37 @@ class TilePlugin: NSObject, NSDockTilePlugIn {
 
         settingsObserver = SettingsStore.shared.observeChanges { [weak self] in
             self?.tileView?.reloadSettings()
+            self?.retick()
             self?.refresh()
         }
 
         didAttach()
 
-        if tickInterval > 0 {
-            let ticker = WallClockTicker(interval: tickInterval) { [weak self] in self?.tick() }
-            ticker.start()
-            self.ticker = ticker
-        }
+        retick()
         refresh()
+    }
+
+    /// Starts, stops or re-paces the ticker to match what the subclass now
+    /// asks for. Read once at attach it would be wrong the moment somebody
+    /// changes a setting the pace depends on — a clock face whose hand sweeps
+    /// wants fifteen ticks a second, and the face next to it one a minute.
+    private func retick() {
+        let wanted = tickInterval
+        guard wanted != tickedAt else { return }
+        ticker?.stop()
+        ticker = nil
+        tickedAt = wanted
+        guard wanted > 0 else { return }
+        let ticker = WallClockTicker(interval: wanted) { [weak self] in self?.tick() }
+        ticker.start()
+        self.ticker = ticker
     }
 
     private func detach() {
         willDetach()
         ticker?.stop()
         ticker = nil
+        tickedAt = -1
         if let settingsObserver {
             DistributedNotificationCenter.default().removeObserver(settingsObserver)
         }
