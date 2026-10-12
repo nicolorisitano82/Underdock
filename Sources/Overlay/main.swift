@@ -7,6 +7,7 @@ import AppKit
 /// so the agent can simply build them all and let them decide.
 final class OverlayAgentDelegate: NSObject, NSApplicationDelegate {
     private var bars: [OverlayBarController] = []
+    private let dockWatcher = DockWatcher()
     private let notch = NotchPanel()
     private var previewObserver: NSObjectProtocol?
     private var openObserver: NSObjectProtocol?
@@ -106,6 +107,10 @@ final class OverlayAgentDelegate: NSObject, NSApplicationDelegate {
         bars = kinds.flatMap { $0.controllers() }
         playbackTokens = bag.tokens
         bars.forEach { $0.start() }
+
+        // Tells the tiles when the pointer is on the Dock, so that what moves
+        // can move faster while it is being watched.
+        dockWatcher.start()
 
         // A click on a folder tile asks for its preview; the tile's own helper
         // has quit by the time this arrives.

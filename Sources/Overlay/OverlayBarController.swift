@@ -94,6 +94,28 @@ final class OverlayBarController {
         return DockAccessibility.flipped(union)
     }
 
+    /// Whether the pointer counts as being on the Dock — with the line drawn
+    /// in two places rather than one.
+    ///
+    /// A single band flaps: a pointer resting on its edge crosses it several
+    /// times a second, and each crossing re-paces a timer here and another one
+    /// in every tile plug-in listening. Measured, with the pointer held still
+    /// near the Dock: four changes of mind in 200 ms. So it takes a nearer
+    /// approach to say yes than it does to keep saying it, and once the answer
+    /// is yes it stays yes for a moment whatever the pointer does.
+    private var heldHotUntil = Date.distantPast
+
+    private func isPointerNear(_ frame: NSRect) -> Bool {
+        if Date() < heldHotUntil { return true }
+        let pointer = NSEvent.mouseLocation
+        let reach: CGFloat = cadence == .hot ? 8 : 6
+        let band = frame.insetBy(dx: -frame.height * reach,
+                                 dy: -frame.height * (cadence == .hot ? 2.5 : 1.5))
+        guard band.contains(pointer) else { return false }
+        heldHotUntil = Date().addingTimeInterval(0.5)
+        return true
+    }
+
     private enum Cadence {
         /// The pointer is near the Dock: magnification moves every tile.
         case hot
@@ -138,9 +160,7 @@ final class OverlayBarController {
             panel.orderFrontRegardless()
         }
 
-        let pointer = NSEvent.mouseLocation
-        let band = frame.insetBy(dx: -frame.height * 6, dy: -frame.height * 1.5)
-        setCadence(band.contains(pointer) ? .hot : .warm)
+        setCadence(isPointerNear(frame) ? .hot : .warm)
     }
 
 }

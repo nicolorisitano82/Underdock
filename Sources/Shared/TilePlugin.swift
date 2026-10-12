@@ -21,6 +21,7 @@ class TilePlugin: NSObject, NSDockTilePlugIn {
     /// tell whether it still fits.
     private var tickedAt: TimeInterval = -1
     private var settingsObserver: NSObjectProtocol?
+    private var attentionObserver: NSObjectProtocol?
 
     // MARK: Subclass hooks
 
@@ -91,6 +92,10 @@ class TilePlugin: NSObject, NSDockTilePlugIn {
 
         didAttach()
 
+        // The pace of some tiles depends on where the pointer is, which only
+        // the agent can see.
+        attentionObserver = DockAttention.listen { [weak self] in self?.retick() }
+
         retick()
         refresh()
     }
@@ -120,6 +125,8 @@ class TilePlugin: NSObject, NSDockTilePlugIn {
             DistributedNotificationCenter.default().removeObserver(settingsObserver)
         }
         settingsObserver = nil
+        if let attentionObserver { DockAttention.stopListening(attentionObserver) }
+        attentionObserver = nil
         dockTile?.contentView = nil
         dockTile = nil
         tileView = nil

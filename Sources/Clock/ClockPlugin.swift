@@ -13,15 +13,27 @@ final class ClockDockTilePlugin: TilePlugin {
     /// once, and even then only if the face would look different — with the
     /// seconds off, that is once a minute.
     ///
-    /// Fifteen because the drawing costs 1.4 ms a frame, measured: twenty
-    /// milliseconds of work a second, in a process the Dock shares with every
-    /// other third-party extra. Sixty would look no better on a tile this size
-    /// and would cost four times as much.
-    static let sweepRate: TimeInterval = 1.0 / 15
+    /// How fast a sweeping hand is redrawn, and it depends on who is looking.
+    ///
+    /// On a tile at rest the tip of the second hand travels 2.4 px a second,
+    /// so eight redraws move it less than a third of a pixel at a time and
+    /// nothing is gained by asking for more. Magnified under the pointer it
+    /// travels 11.3 px a second and the step only falls under a pixel past
+    /// twelve, so there fifteen is worth its 4.9% of a core — and it is spent
+    /// for as long as the pointer stays, which is as long as anyone can see it.
+    /// Where nothing is heard from the agent, ten splits the difference.
+    static let watchedRate: TimeInterval = 1.0 / 15
+    static let restingRate: TimeInterval = 1.0 / 8
+    static let unattendedRate: TimeInterval = 1.0 / 10
 
     override var tickInterval: TimeInterval {
         let settings = ClockSettings.current(instanceID)
-        return settings.showsSeconds && settings.style.sweeps ? Self.sweepRate : 1
+        guard settings.showsSeconds, settings.style.sweeps else { return 1 }
+        switch DockAttention.state {
+        case .hot: return Self.watchedRate
+        case .cold: return Self.restingRate
+        case .unknown: return Self.unattendedRate
+        }
     }
 
     override func tick() {
