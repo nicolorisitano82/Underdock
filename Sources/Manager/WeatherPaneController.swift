@@ -81,6 +81,10 @@ final class WeatherPaneController: PaneViewController {
                                           isOn: settings.showsRange,
                                           action: #selector(rangeChanged)))
 
+        stack.addArrangedSubview(checkbox(T("Cielo animato", "Animated sky"),
+                                          isOn: settings.animatedSky,
+                                          action: #selector(skyChanged)))
+
         stack.addArrangedSubview(sectionTitle(T("Colore", "Colour")))
         let swatches = AccentSwatchView(selectedHex: settings.accentHex)
         swatches.onSelect = { [weak self] hex in
@@ -194,6 +198,11 @@ final class WeatherPaneController: PaneViewController {
 
     @objc private func rangeChanged(_ sender: NSButton) {
         settings.showsRange = sender.state == .on
+        store()
+    }
+
+    @objc private func skyChanged(_ sender: NSButton) {
+        settings.animatedSky = sender.state == .on
         store()
     }
 

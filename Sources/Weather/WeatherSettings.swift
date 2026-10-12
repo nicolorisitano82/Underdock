@@ -15,6 +15,9 @@ struct WeatherSettings: Equatable {
     var longitude: Double = 0
     var units: Units = .celsius
     var showsRange = true
+    /// The sky behind the numbers: a gradient with the weather happening in
+    /// it. Off, the widget is the plain plate it always was.
+    var animatedSky = true
     var accentHex = "#0A84FF"
 
     var hasPlace: Bool { !place.isEmpty && !(latitude == 0 && longitude == 0) }
@@ -29,6 +32,7 @@ struct WeatherSettings: Equatable {
         static func longitude(_ instance: String) -> String { "\(instance).longitude" }
         static func units(_ instance: String) -> String { "\(instance).units" }
         static func showsRange(_ instance: String) -> String { "\(instance).showsRange" }
+        static func animatedSky(_ instance: String) -> String { "\(instance).animatedSky" }
         static func accent(_ instance: String) -> String { "\(instance).accent" }
     }
 
@@ -45,6 +49,7 @@ struct WeatherSettings: Equatable {
             units: Units(rawValue: store.string(Key.units(instance),
                                                 or: defaults.units.rawValue)) ?? defaults.units,
             showsRange: store.bool(Key.showsRange(instance), or: defaults.showsRange),
+            animatedSky: store.bool(Key.animatedSky(instance), or: defaults.animatedSky),
             accentHex: store.string(Key.accent(instance), or: defaults.accentHex)
         )
     }
@@ -57,6 +62,7 @@ struct WeatherSettings: Equatable {
             Key.longitude(instance): longitude,
             Key.units(instance): units.rawValue,
             Key.showsRange(instance): showsRange,
+            Key.animatedSky(instance): animatedSky,
             Key.accent(instance): accentHex,
         ])
     }

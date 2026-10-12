@@ -18,24 +18,92 @@ final class WeatherBarView: BarContentView {
 
     deinit {
         if let token { store.removeListener(token) }
+        animation?.invalidate()
+        occlusionObserver.map(NotificationCenter.default.removeObserver)
     }
 
     private func subscribe() {
         guard token == nil else { return }
-        token = store.addListener { [weak self] in self?.needsDisplay = true }
+        token = store.addListener { [weak self] in
+            self?.updateAnimation()
+            self?.needsDisplay = true
+        }
     }
 
     override func reloadSettings() {
         settings = WeatherSettings.current(resolvedInstance("weather"))
         subscribe()
         store.refresh()
+        updateAnimation()
         needsDisplay = true
     }
 
+    /// How much of the sky shows through.
+    ///
+    /// A bar in the Dock is a small thing between other people's icons and a
+    /// full-strength sky there shouts; the panel in the notch is a surface of
+    /// its own and can carry the picture.
+    private var sceneStrength: CGFloat { isTall ? 1 : (fillsHeight ? 0.92 : 0.78) }
+
+    // MARK: Keeping it moving
+
+    private var animation: Timer?
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        occlusionObserver.map(NotificationCenter.default.removeObserver)
+        occlusionObserver = nil
+        if let window {
+            occlusionObserver = NotificationCenter.default.addObserver(
+                forName: NSWindow.didChangeOcclusionStateNotification,
+                object: window, queue: .main
+            ) { [weak self] _ in self?.updateAnimation() }
+        }
+        updateAnimation()
+    }
+
+    private var occlusionObserver: NSObjectProtocol?
+
+    /// Twenty frames a second while the sky is on screen, and nothing at all
+    /// otherwise: a window that is hidden behind another one, or belongs to a
+    /// notch panel that is closed, is not worth drawing rain into.
+    private func updateAnimation() {
+        let visible = window?.occlusionState.contains(.visible) ?? false
+        let wanted = settings.animatedSky && visible && store.reading != nil
+            && WidgetChrome.showsBackground
+        if wanted, animation == nil {
+            let timer = Timer(timeInterval: 1.0 / 20, repeats: true) { [weak self] _ in
+                self?.needsDisplay = true
+            }
+            timer.tolerance = 1.0 / 60
+            RunLoop.main.add(timer, forMode: .common)
+            animation = timer
+        } else if !wanted, animation != nil {
+            animation?.invalidate()
+            animation = nil
+        }
+    }
+
     override func draw(_ dirtyRect: NSRect) {
-        drawWidgetBackground()
-        let palette = TilePalette.resolve(dark: isDarkContext, accent: settings.accent)
+        let background = drawWidgetBackground()
+        var palette = TilePalette.resolve(dark: isDarkContext, accent: settings.accent)
         let plate = contentPlate
+
+        // The sky goes in first, inside the plate the chrome just drew, and
+        // only when there is a reading to draw a sky for.
+        // Not when the plate itself has been turned off: somebody who asked
+        // for no background behind their widgets did not ask for a sky.
+        if let reading = store.reading, settings.animatedSky, WidgetChrome.showsBackground {
+            WeatherScene.draw(in: background,
+                              radius: background.height * TileGeometry.cornerRatio,
+                              code: reading.code, isNight: reading.isNight,
+                              wind: reading.wind, at: Date().timeIntervalSince1970,
+                              strength: sceneStrength)
+            // On top of a sky, the system's own text colours are the wrong
+            // ones: they follow the desktop's light or dark, and the sky
+            // follows the weather.
+            palette = TilePalette.resolve(dark: true, accent: .white)
+        }
 
         guard let reading = store.reading else {
             let message = store.problem ?? T("In ascolto…", "Listening…")
