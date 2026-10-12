@@ -4,7 +4,7 @@ Widget dentro il Dock di macOS, senza sostituirlo. Il Dock resta quello di siste
 e continua a fare il layout, l'ingrandimento e la scomparsa automatica: noi ci
 mettiamo il contenuto.
 
-**[Scarica la 1.3.1](https://github.com/nicolorisitano82/Underdock/releases/latest/download/Underdock.dmg)** ·
+**[Scarica la 1.4](https://github.com/nicolorisitano82/Underdock/releases/latest/download/Underdock.dmg)** ·
 [sito del progetto](https://nicolorisitano82.github.io/Underdock/) · macOS 14+ · licenza MIT
 
 Interfaccia in italiano e inglese, secondo la lingua del Mac.
@@ -22,7 +22,7 @@ Interfaccia in italiano e inglese, secondo la lingua del Mac.
 | **Note** | tile o barra | Le note di Apple: l'ultima modificata, il conteggio, e il click apre quella nota |
 | **Azioni** | barra | Quattro celle: icona, colori, e un'azione ciascuna |
 | **Appuntamenti** | barra | Quello che c'è adesso e quello che viene dopo, dal calendario di Apple o da un indirizzo iCal segreto di Google |
-| **Meteo** | barra | Tempo, temperatura, minima e massima del posto che scegli. Previsioni di Open-Meteo, senza chiave né account |
+| **Meteo** | barra | Tempo, temperatura, minima e massima del posto che scegli, con il cielo animato dietro: sole, pioggia, neve, lampi. Previsioni di Open-Meteo, senza chiave né account |
 | **Mensola** | barra | Dove posare un file per un minuto: ci si trascina sopra, ci si trascina via. Niente viene spostato né copiato |
 
 Quasi tutti si possono moltiplicare con **+** e **−**: due orologi su fusi diversi,
